@@ -39,6 +39,7 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
               TextFormField(
                 decoration: InputDecoration(labelText: '项目名称'),
                 onSaved: (v) => itemName = v ?? '',
+                
               ),
               TextFormField(
                 decoration: InputDecoration(labelText: '金额'),

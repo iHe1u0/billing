@@ -17,17 +17,16 @@ class PaymentDatabase {
     return _database!;
   }
 
-  Future<Database> _initDB(String filePath) async {
+  Future<Database> _initDB(String dbName) async {
     if (Platform.isWindows || Platform.isLinux) {
       // Use FFI for Windows and Linux
       sqfliteFfiInit();
     }
     var databaseFactory = databaseFactoryFfi;
 
-    final dbPath = await databaseFactory.getDatabasesPath();
-    final path = join(dbPath, filePath);
+    final dbPath = await _getDatabasePath();
+    final path = join(dbPath, dbName);
 
-    // return await databaseFactory.openDatabase(path, version: 1, onCreate: _createDB);
     return await databaseFactory.openDatabase(path, options: OpenDatabaseOptions(version: 1, onCreate: _createDB));
   }
 
@@ -41,6 +40,27 @@ class PaymentDatabase {
         isRefunded INTEGER
       )
     ''');
+  }
+
+  Future<String> _getDatabasePath() async {
+    String dbPath;
+
+    if (Platform.isWindows || Platform.isLinux) {
+      // 可执行文件所在的目录
+      final executableDir = Directory.current.path;
+      final dataDir = join(executableDir, 'data');
+
+      // 如果data目录不存在，则创建
+      await Directory(dataDir).create(recursive: true);
+
+      dbPath = join(dataDir, "database");
+    } else {
+      // 其他平台使用默认数据库路径
+      final defaultDbPath = await databaseFactory.getDatabasesPath();
+      dbPath = defaultDbPath;
+    }
+
+    return dbPath;
   }
 
   Future<void> addPayment(PaymentRecord record) async {
