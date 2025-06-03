@@ -36,7 +36,7 @@ class _PaymentListPageState extends State<PaymentListPage> {
   }
 
   void _refund(PaymentRecord record) async {
-    if (record.isRefunded) return;
+    if (record.isRefunded || record.isExpense) return; // 只有正值收入才能退款
     await PaymentDatabase.instance.refundPayment(record.id!);
     _loadRecords();
   }
@@ -50,7 +50,7 @@ class _PaymentListPageState extends State<PaymentListPage> {
       initialDateRange: _startDate != null && _endDate != null
           ? DateTimeRange(start: _startDate!, end: _endDate!)
           : null,
-      helpText: '选择收费记录日期范围',
+      helpText: '选择记录日期范围',
       confirmText: '确定',
       cancelText: '取消',
       locale: Locale('zh'),
@@ -65,11 +65,45 @@ class _PaymentListPageState extends State<PaymentListPage> {
     }
   }
 
+  void _editRecord(PaymentRecord record) async {
+    final controller = TextEditingController(text: record.amount.toStringAsFixed(2));
+
+    final result = await showDialog<double>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('修改金额'),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.numberWithOptions(decimal: true, signed: true),
+          decoration: InputDecoration(labelText: '金额（正数为收入，负数为支出）', border: OutlineInputBorder()),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: Text('取消')),
+          TextButton(
+            onPressed: () {
+              final newAmount = double.tryParse(controller.text.trim());
+              if (newAmount != null) {
+                Navigator.pop(context, newAmount);
+              }
+            },
+            child: Text('保存'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && result != record.amount) {
+      final updated = record.copyWith(amount: result);
+      await PaymentDatabase.instance.updatePayment(updated);
+      _loadRecords();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('收费记录'),
+        title: Text('收入/支出记录'),
         actions: [IconButton(icon: Icon(Icons.date_range), onPressed: _pickDateRange, tooltip: '选择日期范围')],
       ),
       body: records.isEmpty
@@ -79,37 +113,50 @@ class _PaymentListPageState extends State<PaymentListPage> {
               itemCount: records.length,
               itemBuilder: (context, index) {
                 final r = records[index];
+                final isExpense = r.isExpense;
+                final isRefunded = r.isRefunded;
+                final amountColor = isExpense ? Colors.red[700] : (isRefunded ? Colors.grey : Colors.green[700]);
+
                 return Card(
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 3,
                   margin: EdgeInsets.symmetric(vertical: 6, horizontal: 4),
                   child: ListTile(
+                    onTap: () => _editRecord(r),
                     contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     title: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(child: Text(r.itemName, style: TextStyle(fontSize: 16))),
                         Text(
-                          '¥${r.amount.toStringAsFixed(2)}',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.green[700]),
+                          '${isExpense ? '-' : ''}¥${r.amount.abs().toStringAsFixed(2)}',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: amountColor),
                         ),
                       ],
                     ),
                     subtitle: Text(dateFormat.format(r.parsedTime)),
-                    trailing: r.isRefunded
-                        ? Chip(
-                            label: Text('已退款'),
-                            backgroundColor: Colors.red[100],
-                            labelStyle: TextStyle(color: Colors.red),
-                          )
-                        : TextButton(
-                            onPressed: () => _refund(r),
-                            child: Text('退款', style: TextStyle(color: Colors.blue)),
-                          ),
+                    trailing: _buildTrailing(isRefunded, isExpense, () => _refund(r)),
                   ),
                 );
               },
             ),
     );
+  }
+
+  Widget? _buildTrailing(bool isRefunded, bool isExpense, VoidCallback onRefund) {
+    if (isRefunded) {
+      return Chip(
+        label: Text('已退款'),
+        backgroundColor: Colors.red[100],
+        labelStyle: TextStyle(color: Colors.red),
+      );
+    } else if (!isExpense) {
+      return TextButton(
+        onPressed: onRefund,
+        child: Text('退款', style: TextStyle(color: Colors.blue)),
+      );
+    } else {
+      return null;
+    }
   }
 }

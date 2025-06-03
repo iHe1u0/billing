@@ -46,3 +46,5 @@ app.*.map.json
 
 # Package script related
 package/dist/*
+
+/data/

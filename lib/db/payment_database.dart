@@ -26,7 +26,6 @@ class PaymentDatabase {
 
     final dbPath = await _getDatabasePath();
     final path = join(dbPath, dbName);
-
     return await databaseFactory.openDatabase(path, options: OpenDatabaseOptions(version: 1, onCreate: _createDB));
   }
 
@@ -37,7 +36,8 @@ class PaymentDatabase {
         itemName TEXT,
         amount REAL,
         time TEXT,
-        isRefunded INTEGER
+        isRefunded INTEGER,
+        isExpense INTEGER DEFAULT 0
       )
     ''');
   }
@@ -68,6 +68,19 @@ class PaymentDatabase {
     await db.insert('payments', record.toMap());
   }
 
+  Future<void> addExpense(PaymentRecord record) async {
+    final db = await instance.database;
+    final expense = PaymentRecord(
+      id: record.id,
+      itemName: record.itemName,
+      amount: record.amount,
+      time: record.time,
+      isRefunded: record.isRefunded,
+      isExpense: true, // 设置为支出
+    );
+    await db.insert('payments', expense.toMap());
+  }
+
   Future<List<PaymentRecord>> fetchPayments() async {
     final db = await instance.database;
     final maps = await db.query('payments', orderBy: 'time DESC');
@@ -79,19 +92,35 @@ class PaymentDatabase {
     await db.update('payments', {'isRefunded': 1}, where: 'id = ?', whereArgs: [id]);
   }
 
+  // 获取今天的收入总额
   Future<double> getTodayIncome() async {
     final db = await instance.database;
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
     final result = await db.rawQuery(
       '''
-      SELECT SUM(amount) as total FROM payments
-      WHERE isRefunded = 0 AND time LIKE ?
+    SELECT SUM(amount) as total FROM payments
+    WHERE isRefunded = 0 AND isExpense = 0 AND time LIKE ?
     ''',
       ['$today%'],
     );
     return result.first['total'] == null ? 0.0 : result.first['total'] as double;
   }
 
+  // 获取今天的支出总额
+  Future<double> getTodayExpense() async {
+    final db = await instance.database;
+    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    final result = await db.rawQuery(
+      '''
+    SELECT SUM(amount) as total FROM payments
+    WHERE isRefunded = 0 AND isExpense = 1 AND time LIKE ?
+    ''',
+      ['$today%'],
+    );
+    return result.first['total'] == null ? 0.0 : result.first['total'] as double;
+  }
+
+  // 获取今天的所有支付记录
   Future<List<PaymentRecord>> getTodayPayments() async {
     final db = await instance.database;
     final now = DateTime.now();
@@ -104,5 +133,11 @@ class PaymentDatabase {
     );
 
     return result.map((json) => PaymentRecord.fromJson(json)).toList();
+  }
+
+  // 更新记录
+  Future<void> updatePayment(PaymentRecord record) async {
+    final db = await instance.database;
+    await db.update('payments', record.toMap(), where: 'id = ?', whereArgs: [record.id]);
   }
 }
