@@ -1,5 +1,7 @@
 import 'package:billing/beans/payment_record.dart';
 import 'package:billing/db/payment_database.dart';
+import 'package:billing/services/auth_service.dart';
+import 'package:billing/services/session_service.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:go_router/go_router.dart';
@@ -33,6 +35,16 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _loadData() async {
+    final user = await AuthService.getLoginUser();
+    if (user != null) {
+      Session.currentUser = user;
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('登录失效，请重新登录')));
+        AuthService.logout();
+        context.goNamed("login");
+      }
+    }
     final income = await PaymentDatabase.instance.getTodayIncome();
     final expense = await PaymentDatabase.instance.getTodayExpense();
     final allPayments = await PaymentDatabase.instance.getTodayPayments();
@@ -205,7 +217,6 @@ class _HomePageState extends State<HomePage> {
     await context.pushNamed(routeName); // 跳转到命名路由
     _loadData(); // 返回后刷新
   }
-  // 其他方法和按钮保持不变...
 
   @override
   Widget build(BuildContext context) {

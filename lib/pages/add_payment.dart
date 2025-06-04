@@ -1,5 +1,6 @@
 import 'package:billing/beans/payment_record.dart';
 import 'package:billing/db/payment_database.dart';
+import 'package:billing/services/session_service.dart' show Session;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -20,9 +21,10 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
       _formKey.currentState!.save();
       final time = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
       final record = PaymentRecord(itemName: itemName, amount: amount, time: time);
-      await PaymentDatabase.instance.addPayment(record);
-      // ignore: use_build_context_synchronously
-      Navigator.pop(buildContext);
+      await PaymentDatabase.instance.addPayment(record, Session.currentUser!.id!);
+      if (buildContext.mounted) {
+        Navigator.pop(buildContext);
+      }
     }
   }
 
@@ -39,7 +41,6 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
               TextFormField(
                 decoration: InputDecoration(labelText: '项目名称'),
                 onSaved: (v) => itemName = v ?? '',
-                
               ),
               TextFormField(
                 decoration: InputDecoration(labelText: '金额'),

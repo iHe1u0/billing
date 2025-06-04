@@ -18,18 +18,25 @@ class PaymentDatabase {
   }
 
   Future<Database> _initDB(String dbName) async {
-    if (Platform.isWindows || Platform.isLinux) {
-      // Use FFI for Windows and Linux
-      sqfliteFfiInit();
-    }
+    sqfliteFfiInit();
     var databaseFactory = databaseFactoryFfi;
-
     final dbPath = await _getDatabasePath();
     final path = join(dbPath, dbName);
     return await databaseFactory.openDatabase(path, options: OpenDatabaseOptions(version: 1, onCreate: _createDB));
   }
 
   Future _createDB(Database db, int version) async {
+    //   await db.execute('''
+    //     CREATE TABLE payments (
+    //       id INTEGER PRIMARY KEY AUTOINCREMENT,
+    //       itemName TEXT,
+    //       amount REAL,
+    //       time TEXT,
+    //       isRefunded INTEGER,
+    //       isExpense INTEGER DEFAULT 0
+    //     )
+    //   ''');
+    // }
     await db.execute('''
       CREATE TABLE payments (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -37,7 +44,8 @@ class PaymentDatabase {
         amount REAL,
         time TEXT,
         isRefunded INTEGER,
-        isExpense INTEGER DEFAULT 0
+        isExpense INTEGER DEFAULT 0,
+        userId INTEGER
       )
     ''');
   }
@@ -63,12 +71,13 @@ class PaymentDatabase {
     return dbPath;
   }
 
-  Future<void> addPayment(PaymentRecord record) async {
+  Future<void> addPayment(PaymentRecord record, int userId) async {
     final db = await instance.database;
-    await db.insert('payments', record.toMap());
+    final data = record.toMap()..['userId'] = userId;
+    await db.insert('payments', data);
   }
 
-  Future<void> addExpense(PaymentRecord record) async {
+  Future<void> addExpense(PaymentRecord record, int userId) async {
     final db = await instance.database;
     final expense = PaymentRecord(
       id: record.id,
@@ -78,7 +87,8 @@ class PaymentDatabase {
       isRefunded: record.isRefunded,
       isExpense: true, // 设置为支出
     );
-    await db.insert('payments', expense.toMap());
+    final data = expense.toMap()..['userId'] = userId;
+    await db.insert('payments', data);
   }
 
   Future<List<PaymentRecord>> fetchPayments() async {

@@ -1,5 +1,6 @@
 import 'package:billing/beans/payment_record.dart';
 import 'package:billing/db/payment_database.dart';
+import 'package:billing/services/session_service.dart' show Session;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -20,7 +21,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
       _formKey.currentState!.save();
       final time = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
       final record = PaymentRecord(itemName: itemName, amount: amount, time: time, isExpense: true);
-      await PaymentDatabase.instance.addExpense(record);
+      await PaymentDatabase.instance.addExpense(record, Session.currentUser!.id!);
       if (buildContext.mounted) {
         Navigator.pop(buildContext);
       }
