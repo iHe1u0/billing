@@ -221,7 +221,21 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('游乐场收入统计')),
+      appBar: AppBar(
+        title: Text('游乐场收入统计'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout),
+            tooltip: '退出登录',
+            onPressed: () async {
+              await AuthService.logout();
+              if (context.mounted) {
+                context.goNamed("login");
+              }
+            },
+          ),
+        ],
+      ),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
