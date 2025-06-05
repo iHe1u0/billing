@@ -1,5 +1,6 @@
 import 'package:billing/beans/user.dart';
 import 'package:billing/db/user_database.dart';
+import 'package:billing/utils/app_config.dart';
 import 'package:flutter/material.dart';
 
 class UserManagementPage extends StatefulWidget {
@@ -20,6 +21,11 @@ class _UserManagementPageState extends State<UserManagementPage> {
   }
 
   Future<void> _toggleUserStatus(User user) async {
+    if (user.username == AppConfig.superAdminUsername) {
+      // 管理员用户不能被禁用
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('这个管理员用户不能被禁用')));
+      return;
+    }
     final updatedUser = user.copyWith(isActive: !user.isActive);
     await UserDatabase.instance.updateUser(updatedUser);
     _loadUsers();

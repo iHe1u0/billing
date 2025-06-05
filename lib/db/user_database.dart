@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:billing/beans/user.dart';
+import 'package:billing/utils/app_config.dart';
 import 'package:path/path.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -58,8 +59,8 @@ class UserDatabase {
 
     // 创建默认管理员
     await db.insert('users', {
-      'username': 'admin',
-      'password': 'cc1.kt@2025',
+      'username': AppConfig.superAdminUsername,
+      'password': AppConfig.superAdminPassword,
       'isAdmin': 1,
       'isActive': 1,
       'registerTime': DateTime.now().toIso8601String(),
