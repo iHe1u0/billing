@@ -1,6 +1,6 @@
 import 'package:billing/beans/user.dart';
-import 'package:flutter/material.dart';
 import 'package:billing/db/user_database.dart';
+import 'package:flutter/material.dart';
 
 class UserManagementPage extends StatefulWidget {
   const UserManagementPage({super.key});

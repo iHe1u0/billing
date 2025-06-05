@@ -26,17 +26,6 @@ class PaymentDatabase {
   }
 
   Future _createDB(Database db, int version) async {
-    //   await db.execute('''
-    //     CREATE TABLE payments (
-    //       id INTEGER PRIMARY KEY AUTOINCREMENT,
-    //       itemName TEXT,
-    //       amount REAL,
-    //       time TEXT,
-    //       isRefunded INTEGER,
-    //       isExpense INTEGER DEFAULT 0
-    //     )
-    //   ''');
-    // }
     await db.execute('''
       CREATE TABLE payments (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

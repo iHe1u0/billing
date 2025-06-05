@@ -2,8 +2,8 @@ import 'package:billing/beans/payment_record.dart';
 import 'package:billing/db/payment_database.dart';
 import 'package:billing/services/auth_service.dart';
 import 'package:billing/services/session_service.dart';
-import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 class HomePage extends StatefulWidget {
@@ -16,11 +16,14 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   double todayIncome = 0.0;
   double todayExpense = 0.0;
+
   // 用于存储各类别的金额
   Map<String, double> categoryAmountMap = {};
+
   // 用于存储支付金额和时间
   List<double> paymentAmounts = [];
   List<DateTime> paymentTimes = [];
+
   // 用于存储收入和支出记录
   List<PaymentRecord> incomeRecords = [];
   List<PaymentRecord> expenseRecords = [];
@@ -35,10 +38,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _loadData() async {
-    final user = await AuthService.getLoginUser();
-    if (user != null) {
-      Session.currentUser = user;
-    } else {
+    final user = Session.currentUser;
+    if (user == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('登录失效，请重新登录')));
         AuthService.logout();
@@ -190,8 +191,10 @@ class _HomePageState extends State<HomePage> {
   Widget _buildActionButtons() {
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      child: Wrap(
+        spacing: 12,
+        runSpacing: 12,
+        alignment: WrapAlignment.center,
         children: [
           ElevatedButton.icon(
             icon: Icon(Icons.add),
@@ -213,6 +216,31 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  List<Widget> _buildAppBarActions(BuildContext context) {
+    final isAdmin = Session.currentUser?.isAdmin ?? false;
+
+    return [
+      if (isAdmin)
+        IconButton(
+          icon: Icon(Icons.admin_panel_settings),
+          tooltip: '用户管理',
+          onPressed: () {
+            context.goNamed("user_management"); // 确保已在 GoRouter 配置中设置此名称
+          },
+        ),
+      IconButton(
+        icon: Icon(Icons.logout),
+        tooltip: '退出登录',
+        onPressed: () async {
+          await AuthService.logout();
+          if (context.mounted) {
+            context.goNamed("login");
+          }
+        },
+      ),
+    ];
+  }
+
   void _navigateAndReload(BuildContext context, String routeName) async {
     await context.pushNamed(routeName); // 跳转到命名路由
     _loadData(); // 返回后刷新
@@ -221,21 +249,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('游乐场收入统计'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.logout),
-            tooltip: '退出登录',
-            onPressed: () async {
-              await AuthService.logout();
-              if (context.mounted) {
-                context.goNamed("login");
-              }
-            },
-          ),
-        ],
-      ),
+      appBar: AppBar(title: Text('游乐场收入统计'), actions: _buildAppBarActions(context)),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,

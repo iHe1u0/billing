@@ -75,7 +75,7 @@ class _PaymentListPageState extends State<PaymentListPage> {
         content: TextField(
           controller: controller,
           keyboardType: TextInputType.numberWithOptions(decimal: true, signed: true),
-          decoration: InputDecoration(labelText: '金额（正数为收入，负数为支出）', border: OutlineInputBorder()),
+          decoration: InputDecoration(labelText: '金额', border: OutlineInputBorder()),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: Text('取消')),

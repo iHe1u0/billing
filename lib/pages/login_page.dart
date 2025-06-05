@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:billing/services/session_service.dart';
+import 'package:billing/utils/app_config.dart';
 import 'package:flutter/material.dart';
 import 'package:billing/db/user_database.dart';
 import 'package:go_router/go_router.dart';
@@ -23,12 +24,20 @@ class _LoginPageState extends State<LoginPage> {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
       final user = await UserDatabase.instance.authenticateUser(_username, _password);
+
       if (user != null && user.isActive) {
+        final prefs = await SharedPreferences.getInstance();
+
         if (_rememberMe) {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('loggedInUserId', jsonEncode(user.toMap()));
+          // ✅ 勾选了“记住我”才保存用户信息
+          await prefs.setString(AppConfig.preferLoginUser, jsonEncode(user.toMap()));
+          await prefs.setBool(AppConfig.preferAutoLogin, true);
+        } else {
+          // 🚫 没勾选则清除用户信息，确保不自动登录
+          await prefs.remove(AppConfig.preferLoginUser);
+          await prefs.setBool(AppConfig.preferAutoLogin, false);
         }
-        // Navigate to home page
+
         if (mounted) {
           Session.currentUser = user;
           context.goNamed('home');
