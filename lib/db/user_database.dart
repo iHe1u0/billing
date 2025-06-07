@@ -65,7 +65,7 @@ class UserDatabase {
       'isActive': 1,
       'registerTime': DateTime.now().toIso8601String(),
       'expireTime': null,
-      'note': '默认管理员账户',
+      'note': '系统超级管理员',
     });
   }
 
@@ -94,7 +94,21 @@ class UserDatabase {
 
   Future<int> createUser(User user) async {
     final db = await database;
-    return await db.insert('users', user.toMap());
+
+    // 插入用户
+    final userId = await db.insert('users', user.toMap());
+
+    // 创建对应的打卡表
+    final tableName = 'attendance_user_$userId';
+    await db.execute('''
+      CREATE TABLE $tableName (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp TEXT,
+        type TEXT
+      )
+    ''');
+
+    return userId;
   }
 
   Future<int> updateUser(User user) async {
@@ -112,5 +126,12 @@ class UserDatabase {
     final maps = await db.query('users', where: 'id = ?', whereArgs: [id]);
     if (maps.isNotEmpty) return User.fromMap(maps.first);
     return null;
+  }
+
+  Future<Map<int, String>> getUserIdUsernameMap() async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query('users', columns: ['id', 'username']);
+
+    return {for (var map in maps) map['id'] as int: map['username'] as String};
   }
 }

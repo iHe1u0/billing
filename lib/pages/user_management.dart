@@ -48,9 +48,12 @@ class _UserManagementPageState extends State<UserManagementPage> {
           return ListTile(
             title: Text(user.username),
             subtitle: Text('管理员: ${user.isAdmin ? '是' : '否'} | 状态: ${user.isActive ? '激活' : '禁用'}'),
-            trailing: IconButton(
-              icon: Icon(user.isActive ? Icons.lock_open : Icons.lock),
-              onPressed: () => _toggleUserStatus(user),
+            trailing: Visibility(
+              visible: user.username != AppConfig.superAdminUsername,
+              child: IconButton(
+                icon: Icon(user.isActive ? Icons.lock_open : Icons.lock),
+                onPressed: () => _toggleUserStatus(user),
+              ), // 管理员用户不能被禁用
             ),
           );
         },

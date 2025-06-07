@@ -20,7 +20,13 @@ class _AddExpensePageState extends State<AddExpensePage> {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
       final time = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
-      final record = PaymentRecord(itemName: itemName, amount: amount, time: time, isExpense: true);
+      final record = PaymentRecord(
+        itemName: itemName,
+        amount: amount,
+        time: time,
+        isExpense: true,
+        userId: Session.currentUser!.id!,
+      );
       await PaymentDatabase.instance.addExpense(record, Session.currentUser!.id!);
       if (buildContext.mounted) {
         Navigator.pop(buildContext);

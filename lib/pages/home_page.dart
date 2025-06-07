@@ -197,19 +197,24 @@ class _HomePageState extends State<HomePage> {
         alignment: WrapAlignment.center,
         children: [
           ElevatedButton.icon(
+            icon: Icon(Icons.access_time),
+            label: Text('考勤打卡'),
+            onPressed: () => _navigateAndReload(context, "attendance"),
+          ),
+          ElevatedButton.icon(
             icon: Icon(Icons.add),
             label: Text('添加收费'),
             onPressed: () => _navigateAndReload(context, "add_payment"),
           ),
           ElevatedButton.icon(
-            icon: Icon(Icons.receipt_long),
-            label: Text('流水/退款'),
-            onPressed: () => _navigateAndReload(context, "payment_list"),
-          ),
-          ElevatedButton.icon(
             icon: Icon(Icons.remove_circle),
             label: Text('添加支出'),
             onPressed: () => _navigateAndReload(context, "add_expense"),
+          ),
+          ElevatedButton.icon(
+            icon: Icon(Icons.receipt_long),
+            label: Text('流水/退款'),
+            onPressed: () => _navigateAndReload(context, "payment_list"),
           ),
         ],
       ),
@@ -220,14 +225,23 @@ class _HomePageState extends State<HomePage> {
     final isAdmin = Session.currentUser?.isAdmin ?? false;
 
     return [
-      if (isAdmin)
-        IconButton(
+      Visibility(
+        visible: isAdmin,
+        child: IconButton(
           icon: Icon(Icons.admin_panel_settings),
           tooltip: '用户管理',
           onPressed: () {
-            context.goNamed("user_management"); // 确保已在 GoRouter 配置中设置此名称
+            context.pushNamed("user_management");
           },
         ),
+      ),
+      IconButton(
+        icon: Icon(Icons.calendar_today),
+        tooltip: '考勤管理',
+        onPressed: () {
+          context.pushNamed("attendance_summary");
+        },
+      ),
       IconButton(
         icon: Icon(Icons.logout),
         tooltip: '退出登录',
@@ -249,7 +263,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('游乐场收入统计'), actions: _buildAppBarActions(context)),
+      appBar: AppBar(title: Text('Ciallo~(∠・ω< )⌒★'), actions: _buildAppBarActions(context)),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,

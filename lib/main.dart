@@ -1,9 +1,13 @@
+import 'package:billing/beans/payment_record.dart';
 import 'package:billing/beans/user.dart';
 import 'package:billing/db/payment_database.dart' show PaymentDatabase;
 import 'package:billing/db/user_database.dart';
 import 'package:billing/pages/add_expense.dart';
 import 'package:billing/pages/add_payment.dart';
-import 'package:billing/pages/home.dart';
+import 'package:billing/pages/attendance_page.dart';
+import 'package:billing/pages/attendance_summary_page.dart';
+import 'package:billing/pages/export_payment.dart';
+import 'package:billing/pages/home_page.dart';
 import 'package:billing/pages/login_page.dart';
 import 'package:billing/pages/payment_list.dart';
 import 'package:billing/pages/register_page.dart';
@@ -47,32 +51,56 @@ class MainApp extends StatelessWidget {
           name: 'payment_list',
           builder: (context, state) => const PaymentListPage(),
         ),
-        GoRoute(path: '/login', name: 'login', builder: (context, state) => const LoginPage()),
-        GoRoute(path: '/register', name: 'register', builder: (context, state) => const RegisterPage()),
         GoRoute(
-          path: '/user_management',
+          path: '/payment/export',
+          name: 'export_payment',
+          builder: (context, state) {
+            final extra = state.extra! as Map<String, dynamic>;
+
+            return ExportPaymentPage(
+              records: extra['records'] as List<PaymentRecord>?,
+              startDate: extra['startDate'] as DateTime?, // 注意这里是 as DateTime?
+              endDate: extra['endDate'] as DateTime?,
+            );
+          },
+        ),
+        GoRoute(path: '/user/login', name: 'login', builder: (context, state) => const LoginPage()),
+        GoRoute(path: '/user/register', name: 'register', builder: (context, state) => const RegisterPage()),
+        GoRoute(
+          path: '/user/user_management',
           name: 'user_management',
           builder: (context, state) => const UserManagementPage(),
         ),
+        GoRoute(path: '/user/attendance', name: 'attendance', builder: (context, state) => const AttendancePage()),
+        GoRoute(
+          path: '/user/attendance_summary',
+          name: 'attendance_summary',
+          builder: (context, state) => const AttendanceSummaryPage(),
+        ),
       ],
-      initialLocation: initialUser == null ? '/login' : '/',
+      initialLocation: initialUser == null ? '/user/login' : '/',
       redirect: (context, state) async {
         final user = await AuthService.getLoginUser();
         final isAutoLogin = await AuthService.isAutoLogin();
         final loggingIn =
-            state.matchedLocation == '/login' || state.matchedLocation == '/register' || state.matchedLocation == '/';
+            state.matchedLocation == '/user/login' ||
+            state.matchedLocation == '/user/register' ||
+            state.matchedLocation == '/';
 
-        // 🚫 只有在自动登录开启且 user 存在的情况下，才允许继续
-        if ((!isAutoLogin || user == null) && !loggingIn) {
-          return '/login';
+        if (Session.currentUser == null) {
+          // 🚫 只有在自动登录开启且 user 存在的情况下，才允许继续
+          if ((!isAutoLogin || user == null) && !loggingIn) {
+            return '/user/login';
+          }
+
+          // ✅ 如果已经登录（即自动登录启用且 user 不为空），并尝试访问登录页，则跳转到首页
+          if (user != null && loggingIn) {
+            Session.currentUser = user;
+            return '/';
+          }
+        } else {
+          return state.matchedLocation; // 已经登录，保持当前路由
         }
-
-        // ✅ 如果已经登录（即自动登录启用且 user 不为空），并尝试访问登录页，则跳转到首页
-        if (user != null && loggingIn) {
-          Session.currentUser = user;
-          return '/';
-        }
-
         return null;
       },
     );

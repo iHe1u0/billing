@@ -1,6 +1,7 @@
 import 'package:billing/beans/payment_record.dart';
 import 'package:billing/db/payment_database.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 class PaymentListPage extends StatefulWidget {
@@ -35,10 +36,25 @@ class _PaymentListPageState extends State<PaymentListPage> {
     setState(() => records = filtered);
   }
 
-  void _refund(PaymentRecord record) async {
-    if (record.isRefunded || record.isExpense) return; // 只有正值收入才能退款
-    await PaymentDatabase.instance.refundPayment(record.id!);
-    _loadRecords();
+  void _confirmRefund(PaymentRecord record) async {
+    if (record.isRefunded || record.isExpense) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('确认退款'),
+        content: Text('确定要对「${record.itemName}」退款 ¥${record.amount}?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text('取消')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: Text('确认')),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await PaymentDatabase.instance.refundPayment(record.id!);
+      _loadRecords();
+    }
   }
 
   Future<void> _pickDateRange() async {
@@ -99,12 +115,52 @@ class _PaymentListPageState extends State<PaymentListPage> {
     }
   }
 
+  void _confirmDelete(PaymentRecord record) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('确认删除'),
+        content: Text('确定要删除记录「${record.itemName}」吗？该操作不可恢复。'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text('取消')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text('删除', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await PaymentDatabase.instance.deletePayment(record.id!);
+      _loadRecords();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('收入/支出记录'),
-        actions: [IconButton(icon: Icon(Icons.date_range), onPressed: _pickDateRange, tooltip: '选择日期范围')],
+        actions: [
+          IconButton(icon: Icon(Icons.date_range), onPressed: _pickDateRange, tooltip: '选择日期范围'),
+          IconButton(
+            icon: Icon(Icons.download),
+            tooltip: '导出数据',
+            onPressed: () async {
+              List<PaymentRecord> recordsToExport = await PaymentDatabase.instance.queryRecords(
+                start: _startDate,
+                end: _endDate,
+              );
+              if (context.mounted) {
+                context.pushNamed(
+                  'export_payment',
+                  extra: {'records': recordsToExport, 'startDate': _startDate, 'endDate': _endDate},
+                );
+              }
+            },
+          ),
+        ],
       ),
       body: records.isEmpty
           ? Center(child: Text('暂无记录'))
@@ -123,6 +179,7 @@ class _PaymentListPageState extends State<PaymentListPage> {
                   margin: EdgeInsets.symmetric(vertical: 6, horizontal: 4),
                   child: ListTile(
                     onTap: () => _editRecord(r),
+                    onLongPress: () => _confirmDelete(r), // 长按删除
                     contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     title: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -135,7 +192,7 @@ class _PaymentListPageState extends State<PaymentListPage> {
                       ],
                     ),
                     subtitle: Text(dateFormat.format(r.parsedTime)),
-                    trailing: _buildTrailing(isRefunded, isExpense, () => _refund(r)),
+                    trailing: _buildTrailing(isRefunded, isExpense, () => _confirmRefund(r)),
                   ),
                 );
               },

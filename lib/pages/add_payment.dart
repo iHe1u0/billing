@@ -20,7 +20,7 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
       final time = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
-      final record = PaymentRecord(itemName: itemName, amount: amount, time: time);
+      final record = PaymentRecord(itemName: itemName, amount: amount, time: time, userId: Session.currentUser!.id!);
       await PaymentDatabase.instance.addPayment(record, Session.currentUser!.id!);
       if (buildContext.mounted) {
         Navigator.pop(buildContext);

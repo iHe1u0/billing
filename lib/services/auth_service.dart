@@ -12,11 +12,13 @@ class AuthService {
 
     try {
       final jsonStr = prefs.getString(AppConfig.preferLoginUser);
-      if (jsonStr == null) {
-        return null;
+      if (jsonStr != null) {
+        final data = jsonDecode(jsonStr);
+        return User.fromMap(data);
       }
-      final data = jsonDecode(jsonStr);
-      return User.fromMap(data);
+      if (prefs.getBool(AppConfig.preferAutoLogin) == false) {
+        return Session.currentUser;
+      }
     } catch (e) {
       debugPrint(e.toString());
     }

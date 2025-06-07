@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:billing/beans/payment_record.dart';
+import 'package:billing/services/session_service.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' show DateFormat;
 import 'package:path/path.dart' show join;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -75,6 +77,7 @@ class PaymentDatabase {
       time: record.time,
       isRefunded: record.isRefunded,
       isExpense: true, // 设置为支出
+      userId: Session.currentUser!.id!,
     );
     final data = expense.toMap()..['userId'] = userId;
     await db.insert('payments', data);
@@ -88,7 +91,7 @@ class PaymentDatabase {
 
   Future<void> refundPayment(int id) async {
     final db = await instance.database;
-    await db.update('payments', {'isRefunded': 1}, where: 'id = ?', whereArgs: [id]);
+    await db.update('payments', {'isRefunded': 1, 'userId': Session.currentUser?.id}, where: 'id = ?', whereArgs: [id]);
   }
 
   // 获取今天的收入总额
@@ -138,5 +141,46 @@ class PaymentDatabase {
   Future<void> updatePayment(PaymentRecord record) async {
     final db = await instance.database;
     await db.update('payments', record.toMap(), where: 'id = ?', whereArgs: [record.id]);
+  }
+
+  /// 删除记录
+  Future<void> deletePayment(int id) async {
+    final db = await instance.database;
+    await db.delete('payments', where: 'id = ?', whereArgs: [id]);
+  }
+
+  /// 查询记录
+  Future<List<PaymentRecord>> queryRecords({DateTime? start, DateTime? end}) async {
+    final db = await instance.database;
+    String where = '';
+    List<Object?> whereArgs = [];
+
+    DateTime? adjustedStart;
+    DateTime? adjustedEnd;
+
+    if (start != null) {
+      adjustedStart = DateTime(start.year, start.month, start.day - 1, 23, 59, 59, 999);
+      where += 'time >= ?';
+      whereArgs.add(adjustedStart.toIso8601String());
+    }
+
+    if (end != null) {
+      adjustedEnd = DateTime(end.year, end.month, end.day + 1, 0, 0, 0, 0);
+      if (where.isNotEmpty) where += ' AND ';
+      where += 'time <= ?';
+      whereArgs.add(adjustedEnd.toIso8601String());
+    }
+
+    debugPrint('Query where: $where');
+    debugPrint('Query args: $whereArgs');
+
+    final result = await db.query(
+      'payments',
+      where: where.isNotEmpty ? where : null,
+      whereArgs: whereArgs,
+      orderBy: 'time DESC',
+    );
+
+    return result.map((e) => PaymentRecord.fromMap(e)).toList();
   }
 }
