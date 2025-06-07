@@ -69,7 +69,7 @@ IDI_APP_ICON            ICON                    "resources\\app_icon.ico"
 #if defined(FLUTTER_VERSION)
 #define VERSION_AS_STRING FLUTTER_VERSION
 #else
-#define VERSION_AS_STRING "1.0.0"
+#define VERSION_AS_STRING "2025.06.08"
 #endif
 
 VS_VERSION_INFO VERSIONINFO
@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "cc.kt" "\0"
-            VALUE "FileDescription", "billing" "\0"
+            VALUE "FileDescription", "记账软件" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "billing" "\0"
+            VALUE "InternalName", "记账软件" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2025 cc.kt. All rights reserved." "\0"
             VALUE "OriginalFilename", "billing.exe" "\0"
-            VALUE "ProductName", "billing" "\0"
+            VALUE "ProductName", "记账软件" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

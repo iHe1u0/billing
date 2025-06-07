@@ -124,7 +124,7 @@ class _AttendanceSummaryPageState extends State<AttendanceSummaryPage> {
                                   _buildStatRow("❌ 缺勤天数", absent),
                                   const Divider(),
                                   _buildStatRow(
-                                    "📊 打卡率",
+                                    "📊 出勤率",
                                     "${((attended + partial) / _days * 100).toStringAsFixed(1)}%",
                                   ),
                                 ],
@@ -261,6 +261,11 @@ class _AttendanceSummaryPageState extends State<AttendanceSummaryPage> {
   }
 
   void _showMakeUpDialog(String dateKey, String type) async {
+    if (Session.currentUser?.isAdmin == false) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("只有管理员可以补卡")));
+      return;
+    }
+
     final date = DateTime.parse('$dateKey 00:00:00');
     final TimeOfDay? picked = await showTimePicker(context: context, initialTime: const TimeOfDay(hour: 9, minute: 0));
 
@@ -279,6 +284,10 @@ class _AttendanceSummaryPageState extends State<AttendanceSummaryPage> {
   }
 
   void _confirmDeleteRecord(int id, String dateKey) {
+    if (Session.currentUser?.isAdmin == false) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("只有管理员可以删除打卡记录")));
+      return;
+    }
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
