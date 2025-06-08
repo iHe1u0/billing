@@ -1,6 +1,8 @@
 // lib/utils/app_utils.dart
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -65,6 +67,86 @@ class AppUtils {
                   }
                 }
               },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  static void showToast(
+    String message, {
+    Color backgroundColor = Colors.black87,
+    Color textColor = Colors.white,
+    ToastGravity gravity = ToastGravity.BOTTOM,
+    int durationSeconds = 2,
+    BuildContext? context,
+  }) {
+    assert(message.isNotEmpty, "消息不能为空");
+    if (message.isEmpty) {
+      return;
+    }
+
+    if ((Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
+      assert(context != null, "在桌面平台上使用showToast时，context不能为空");
+      if (context != null && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            duration: Duration(seconds: durationSeconds),
+          ),
+        );
+      }
+    } else {
+      Fluttertoast.showToast(
+        msg: message,
+        backgroundColor: backgroundColor,
+        textColor: textColor,
+        gravity: gravity,
+        toastLength: Toast.LENGTH_SHORT,
+        timeInSecForIosWeb: durationSeconds,
+      );
+    }
+  }
+
+  static Future<String?> promptPassword(BuildContext context, {bool isConfirm = false}) async {
+    final controller = TextEditingController();
+    final confirmController = TextEditingController();
+
+    return await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) {
+        return AlertDialog(
+          title: Text(isConfirm ? '请输入备份密码' : '请输入解密密码'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: controller,
+                obscureText: true,
+                decoration: InputDecoration(labelText: '密码'),
+              ),
+              if (isConfirm)
+                TextField(
+                  controller: confirmController,
+                  obscureText: true,
+                  decoration: InputDecoration(labelText: '确认密码'),
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: Text('取消')),
+            TextButton(
+              onPressed: () {
+                final pwd = controller.text.trim();
+                if (isConfirm && pwd != confirmController.text.trim()) {
+                  AppUtils.showToast('两次密码不一致', context: context);
+                  return;
+                }
+                Navigator.pop(context, pwd);
+              },
+              child: Text('确定'),
             ),
           ],
         );

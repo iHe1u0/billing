@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:billing/services/session_service.dart';
 import 'package:billing/utils/app_config.dart';
+import 'package:billing/utils/file_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:billing/db/user_database.dart';
 import 'package:go_router/go_router.dart';
@@ -53,7 +54,18 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('登录')),
+      appBar: AppBar(
+        title: const Text('恢复数据'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.restore),
+            tooltip: '恢复备份的数据',
+            onPressed: () async {
+              FileUtils.restoreData(context);
+            },
+          ),
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(

@@ -1,8 +1,6 @@
-import 'dart:io';
-
 import 'package:billing/beans/payment_record.dart';
 import 'package:billing/services/session_service.dart';
-import 'package:flutter/material.dart';
+import 'package:billing/utils/file_utils.dart';
 import 'package:intl/intl.dart' show DateFormat;
 import 'package:path/path.dart' show join;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -42,24 +40,7 @@ class PaymentDatabase {
   }
 
   Future<String> _getDatabasePath() async {
-    String dbPath;
-
-    if (Platform.isWindows || Platform.isLinux) {
-      // 可执行文件所在的目录
-      final executableDir = Directory.current.path;
-      final dataDir = join(executableDir, 'data');
-
-      // 如果data目录不存在，则创建
-      await Directory(dataDir).create(recursive: true);
-
-      dbPath = join(dataDir, "database");
-    } else {
-      // 其他平台使用默认数据库路径
-      final defaultDbPath = await databaseFactory.getDatabasesPath();
-      dbPath = defaultDbPath;
-    }
-
-    return dbPath;
+    return await FileUtils.getDatabasePath();
   }
 
   Future<void> addPayment(PaymentRecord record, int userId) async {
@@ -171,9 +152,6 @@ class PaymentDatabase {
       whereArgs.add(adjustedEnd.toIso8601String());
     }
 
-    debugPrint('Query where: $where');
-    debugPrint('Query args: $whereArgs');
-
     final result = await db.query(
       'payments',
       where: where.isNotEmpty ? where : null,
@@ -182,5 +160,26 @@ class PaymentDatabase {
     );
 
     return result.map((e) => PaymentRecord.fromMap(e)).toList();
+  }
+
+  /// 获取指定日期的记录
+  Future<List<PaymentRecord>> getRecordsByDate(DateTime date) async {
+    final db = await instance.database;
+    final start = DateTime(date.year, date.month, date.day);
+    final end = DateTime(date.year, date.month, date.day + 1);
+
+    final result = await db.query(
+      'payments',
+      where: 'time >= ? AND time < ?',
+      whereArgs: [start.toIso8601String(), end.toIso8601String()],
+      orderBy: 'time DESC',
+    );
+
+    return result.map((e) => PaymentRecord.fromMap(e)).toList();
+  }
+
+  void close() {
+    _database?.close();
+    _database = null;
   }
 }

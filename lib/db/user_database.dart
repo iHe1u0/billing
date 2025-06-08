@@ -134,4 +134,9 @@ class UserDatabase {
 
     return {for (var map in maps) map['id'] as int: map['username'] as String};
   }
+
+  void close() {
+    _database?.close();
+    _database = null;
+  }
 }

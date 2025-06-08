@@ -2,6 +2,7 @@ import 'package:billing/beans/payment_record.dart';
 import 'package:billing/db/payment_database.dart';
 import 'package:billing/services/auth_service.dart';
 import 'package:billing/services/session_service.dart';
+import 'package:billing/utils/file_utils.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -240,6 +241,13 @@ class _HomePageState extends State<HomePage> {
         tooltip: '考勤管理',
         onPressed: () {
           context.pushNamed("attendance_summary");
+        },
+      ),
+      IconButton(
+        icon: Icon(Icons.backup),
+        tooltip: '备份数据',
+        onPressed: () {
+          FileUtils.backupData(context);
         },
       ),
       IconButton(

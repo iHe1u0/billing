@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:billing/beans/payment_record.dart';
 import 'package:billing/db/user_database.dart';
+import 'package:billing/utils/file_utils.dart';
 import 'package:excel/excel.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:open_file/open_file.dart';
@@ -59,7 +59,7 @@ class _ExportPaymentPageState extends State<ExportPaymentPage> {
       _writeRecordRow(sheet, i + 1, widget.records![i], users);
     }
 
-    final dir = await _getSaveDirectory();
+    final dir = await FileUtils.getSaveDirectory();
     if (dir == null) {
       setState(() {
         _exportResult = '未选择保存目录';
@@ -152,14 +152,6 @@ class _ExportPaymentPageState extends State<ExportPaymentPage> {
     final startStr = widget.startDate != null ? DateFormat('yyyyMMdd').format(widget.startDate!) : '开始';
     final endStr = widget.endDate != null ? DateFormat('yyyyMMdd').format(widget.endDate!) : '结束';
     return '收支导出_$startStr-$endStr.xlsx';
-  }
-
-  Future<Directory?> _getSaveDirectory() async {
-    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-      final path = await FilePicker.platform.getDirectoryPath();
-      return path != null ? Directory(path) : null;
-    }
-    return null;
   }
 
   Future<void> _openFile() async {
