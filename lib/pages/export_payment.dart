@@ -35,13 +35,15 @@ class _ExportPaymentPageState extends State<ExportPaymentPage> {
       _exportResult = null;
     });
 
-    final status = await Permission.storage.request();
-    if (!status.isGranted) {
-      setState(() {
-        _exportResult = '未获得存储权限';
-        _exporting = false;
-      });
-      return;
+    if (Platform.isAndroid || Platform.isIOS) {
+      final status = await Permission.storage.request();
+      if (!status.isGranted) {
+        setState(() {
+          _exportResult = '未获得存储权限';
+          _exporting = false;
+        });
+        return;
+      }
     }
 
     final users = await UserDatabase.instance.getUserIdUsernameMap();
